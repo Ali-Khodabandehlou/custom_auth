@@ -1,5 +1,4 @@
 from django.contrib.auth.models import AbstractUser, UserManager
-from django.core.validators import RegexValidator
 from django.db import models
 
 
@@ -30,3 +29,21 @@ class User(AbstractUser):
     REQUIRED_FIELDS = []
 
     objects = CustomUserManager()
+
+
+class AuthReqs(models.Model):
+    ip_addr = models.CharField(max_length=50)
+    phone_number = models.CharField(max_length=16)
+
+    REQUESTED = 'requested'
+    SUCCESS = 'success'
+    FAILED = 'failed'
+    STATUS_CHOICES = (
+        (REQUESTED, 'requested'),
+        (SUCCESS, 'success'),
+        (FAILED, 'failed'),
+    )
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES)
+
+    created_on = models.DateTimeField(auto_now_add=True)
+    expired = models.BooleanField(default=False)
