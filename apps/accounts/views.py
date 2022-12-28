@@ -25,6 +25,11 @@ class AuthPhoneNumberView(APIView):
             ).exists() else False
         }
 
+        if not response['active_user']:
+            # todo: call the function responsible for code generation and
+            #       sending an sms
+            pass
+
         request.session['user_id'] = request.data.get('user_id')
         return Response(response, status=status.HTTP_200_OK)
 
@@ -46,3 +51,13 @@ class LoginView(APIView):
                 status=AuthReqs.FAILED
             )
             return Response({'error': 'incorrect password'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RegisterCodeView(APIView):
+
+    @staticmethod
+    def post(request, *args, **kwargs):
+        try:
+            pass
+        except:
+            pass
