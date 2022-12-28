@@ -24,6 +24,11 @@ def generate_code(phone_number: str):
 
 
 def handle_bad_requests(request, req_status):
+    """
+        creates a new bad request on function call,
+        then checks if number of bad requests exceeds 3
+        and if True adds ip/user to blocklist
+    """
     AuthReqs.objects.create(
         ip_addr=get_client_ip(request),
         phone_number=request.session.get('user_id'),
@@ -132,6 +137,7 @@ class RegisterCodeView(APIView):
 
                 return Response({'error': 'code expired'}, status=status.HTTP_400_BAD_REQUEST)
 
+            # create a new permission for new registered users with given code
             AllowedSignUpIP.objects.create(
                 phone_number=request.session.get('user_id'),
                 ip_addr=get_client_ip(request)
@@ -166,10 +172,9 @@ class GetUserInfoRegisterView(APIView):
                 user = User.objects.create(
                     phone_number=request.session.get('user_id'),
                     first_name=request.data.get('first_name'),
-                    last_name=request.data.get('last_name')
+                    last_name=request.data.get('last_name'),
+                    email=request.data.get('email')
                 )
-                if request.data.get('email') is not None:
-                    user.email = request.data.get('email')
                 user.set_password(request.data.get('password'))
                 user.save()
 

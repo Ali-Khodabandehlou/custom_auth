@@ -26,6 +26,9 @@ class BlockedIPException(APIException):
 
 
 class BlockedIPPermission(BasePermission):
+    """
+        permission for blocked ip/users
+    """
     message = 'action is blocked for 1 hour'
 
     def has_permission(self, request, view):
@@ -44,6 +47,10 @@ class SignUpException(APIException):
 
 
 class AllowedSignUpPermission(BasePermission):
+    """
+        permission for signup
+        raises an exception when code verification passed 1 hour
+    """
     def has_permission(self, request, view):
         if AllowedSignUpIP.objects.filter(
             ip_addr=get_client_ip(request),

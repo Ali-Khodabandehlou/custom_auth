@@ -1,0 +1,136 @@
+{
+	"info": {
+		"_postman_id": "a32b549d-9b53-442f-ab8e-82a7d34db2ff",
+		"name": "Achare Auth",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "20110122"
+	},
+	"item": [
+		{
+			"name": "phone number auth",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"phone_number\": \"+989124987874\"\n}"
+				},
+				"url": {
+					"raw": "{{domain}}/api/auth/phone/",
+					"host": [
+						"{{domain}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"phone",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "login",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"password\": \"123456\"\n}"
+				},
+				"url": {
+					"raw": "{{domain}}/api/auth/login/",
+					"host": [
+						"{{domain}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"login",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "verify code",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"code\": \"237098\"\n}"
+				},
+				"url": {
+					"raw": "{{domain}}/api/auth/code/",
+					"host": [
+						"{{domain}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"code",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "register info",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"first_name\": \"ali\",\n    \"last_name\": \"khodabandehlou\",\n    \"password\": \"123456!alikh\",\n    \"password2\": \"123456!alikh\",\n    \"email\": \"akhodabandehlou93@gmail.com\"\n}"
+				},
+				"url": {
+					"raw": "{{domain}}/api/auth/register/",
+					"host": [
+						"{{domain}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"register",
+						""
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "domain",
+			"value": "domain"
+		}
+	]
+}
