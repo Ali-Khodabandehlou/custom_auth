@@ -1,3 +1,4 @@
+from datetime import datetime
 import random
 
 from django.contrib.auth import authenticate
@@ -5,7 +6,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import User, AuthReqs, VerificationCode
+from .models import User, AuthReqs, VerificationCode, \
+    CODE_VERIFICATION_TIME_LIMIT
 
 
 def get_client_ip(request):
@@ -59,7 +61,7 @@ class LoginView(APIView):
             AuthReqs.objects.create(
                 ip_addr=get_client_ip(request),
                 phone_number=request.session.get('user_id'),
-                status=AuthReqs.FAILED
+                status=AuthReqs.PASSWORD
             )
             return Response({'error': 'incorrect password'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -69,6 +71,34 @@ class RegisterCodeView(APIView):
     @staticmethod
     def post(request, *args, **kwargs):
         try:
-            pass
+            if not VerificationCode.objects.filter(
+                    code=request.data.get('code'),
+                    phone_number=request.session.get('user_id')
+            ).exist:
+                AuthReqs.objects.create(
+                    ip_addr=get_client_ip(request),
+                    phone_number=request.session.get('user_id'),
+                    status=AuthReqs.VERIFICATION_CODE
+                )
+                return Response({'error': 'code not accepted'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if VerificationCode.objects.get(
+                    code=request.data.get('code'),
+                    phone_number=request.session.get('user_id')
+            ).created_on < datetime.now() - CODE_VERIFICATION_TIME_LIMIT:
+                AuthReqs.objects.create(
+                    ip_addr=get_client_ip(request),
+                    phone_number=request.session.get('user_id'),
+                    status=AuthReqs.VERIFICATION_CODE
+                )
+                return Response({'error': 'code expired'}, status=status.HTTP_400_BAD_REQUEST)
+
+            return Response({'message': 'code accepted'}, status=status.HTTP_200_OK)
+
         except:
-            pass
+            AuthReqs.objects.create(
+                ip_addr=get_client_ip(request),
+                phone_number=request.session.get('user_id'),
+                status=AuthReqs.VERIFICATION_CODE
+            )
+            return Response({'error': 'code not accepted'}, status=status.HTTP_400_BAD_REQUEST)

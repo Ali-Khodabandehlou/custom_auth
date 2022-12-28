@@ -1,5 +1,9 @@
+import datetime
+
 from django.contrib.auth.models import AbstractUser, UserManager
 from django.db import models
+
+CODE_VERIFICATION_TIME_LIMIT = datetime.timedelta(minutes=3)  # in minutes
 
 
 class CustomUserManager(UserManager):
@@ -42,13 +46,11 @@ class AuthReqs(models.Model):
     ip_addr = models.CharField(max_length=50)
     phone_number = models.CharField(max_length=16)
 
-    REQUESTED = 'requested'
-    SUCCESS = 'success'
-    FAILED = 'failed'
+    PASSWORD = 'password'
+    VERIFICATION_CODE = 'verification code'
     STATUS_CHOICES = (
-        (REQUESTED, 'requested'),
-        (SUCCESS, 'success'),
-        (FAILED, 'failed'),
+        (PASSWORD, 'password'),
+        (VERIFICATION_CODE, 'verification code'),
     )
     status = models.CharField(max_length=50, choices=STATUS_CHOICES)
 
