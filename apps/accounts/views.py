@@ -3,7 +3,16 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import User
+from .models import User, AuthReqs
+
+
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
 
 
 class AuthPhoneNumberView(APIView):
@@ -16,7 +25,7 @@ class AuthPhoneNumberView(APIView):
             ).exists() else False
         }
 
-        request.session['phone_number'] = request.data.get('phone_number')
+        request.session['user_id'] = request.data.get('user_id')
         return Response(response, status=status.HTTP_200_OK)
 
 
@@ -26,9 +35,14 @@ class LoginView(APIView):
     def post(request, *args, **kwargs):
         try:
             user = authenticate(
-                request, username=request.session.get('phone_number'),
+                request, username=request.session.get('user_id'),
                 password=request.data.get('password')
             )
             return Response(status=status.HTTP_200_OK)
         except:
-            pass
+            AuthReqs.objects.create(
+                ip_addr=get_client_ip(request),
+                phone_number=request.session.get('user_id'),
+                status=AuthReqs.FAILED
+            )
+            return Response({'error': 'incorrect password'}, status=status.HTTP_400_BAD_REQUEST)
