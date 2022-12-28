@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 import random
 
 from django.contrib.auth import authenticate
@@ -7,19 +7,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import User, AuthReqs, VerificationCode, \
-    CODE_VERIFICATION_TIME_LIMIT
-
-
-def get_client_ip(request):
-    """
-        returns client's IP
-    """
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
-    else:
-        ip = request.META.get('REMOTE_ADDR')
-    return ip
+    CODE_VERIFICATION_TIME_LIMIT, BlockedIP
+from .permissions import get_client_ip, BlockedIPPermission
 
 
 def generate_code(phone_number: str):
@@ -31,6 +20,22 @@ def generate_code(phone_number: str):
         phone_number=phone_number, code=code
     )
     return code
+
+
+def handle_bad_requests(request, req_status):
+    AuthReqs.objects.create(
+        ip_addr=get_client_ip(request),
+        phone_number=request.session.get('user_id'),
+        status=req_status
+    )
+
+    if AuthReqs.objects.filter(
+            ip_addr=get_client_ip(request),
+            created_on__lt=datetime.datetime.now() - datetime.timedelta(hours=1),
+            status=req_status
+    ).count() >= 3:
+        # blocks if bad requests were more than 3
+        BlockedIP.objects.create(ip_addr=get_client_ip(request))
 
 
 class AuthPhoneNumberView(APIView):
@@ -64,10 +69,12 @@ class AuthPhoneNumberView(APIView):
 class LoginView(APIView):
     """
         logs in using given phone number and password
+        permissions: BlockedIPPermission
         allowed methods: POST
         request data:
             password: string
     """
+    permission_classes = (BlockedIPPermission, )
 
     @staticmethod
     def post(request, *args, **kwargs):
@@ -77,12 +84,11 @@ class LoginView(APIView):
                 password=request.data.get('password')
             )
             return Response({'message': 'user logged in successfully'}, status=status.HTTP_200_OK)
+
         except:
-            AuthReqs.objects.create(
-                ip_addr=get_client_ip(request),
-                phone_number=request.session.get('user_id'),
-                status=AuthReqs.PASSWORD
-            )
+            # handles bad requests
+            handle_bad_requests(request, AuthReqs.PASSWORD)
+
             return Response({'error': 'incorrect password'}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -93,6 +99,7 @@ class RegisterCodeView(APIView):
         request data:
             code: string - format: ****** (6 digits)
     """
+    permission_classes = (BlockedIPPermission, )
 
     @staticmethod
     def post(request, *args, **kwargs):
@@ -102,11 +109,9 @@ class RegisterCodeView(APIView):
                     phone_number=request.session.get('user_id')
             ).exist:
                 # checks if code exists
-                AuthReqs.objects.create(
-                    ip_addr=get_client_ip(request),
-                    phone_number=request.session.get('user_id'),
-                    status=AuthReqs.VERIFICATION_CODE
-                )
+                # handles bad requests
+                handle_bad_requests(request, AuthReqs.VERIFICATION_CODE)
+
                 return Response({'error': 'code not accepted'}, status=status.HTTP_400_BAD_REQUEST)
 
             if VerificationCode.objects.get(
@@ -114,11 +119,8 @@ class RegisterCodeView(APIView):
                     phone_number=request.session.get('user_id')
             ).created_on < datetime.now() - CODE_VERIFICATION_TIME_LIMIT:
                 # checks for code expiry
-                AuthReqs.objects.create(
-                    ip_addr=get_client_ip(request),
-                    phone_number=request.session.get('user_id'),
-                    status=AuthReqs.VERIFICATION_CODE
-                )
+                # handles bad requests
+                handle_bad_requests(request, AuthReqs.VERIFICATION_CODE)
 
                 # deletes the expired code
                 VerificationCode.objects.get(
@@ -131,17 +133,16 @@ class RegisterCodeView(APIView):
             return Response({'message': 'code accepted'}, status=status.HTTP_200_OK)
 
         except:
-            AuthReqs.objects.create(
-                ip_addr=get_client_ip(request),
-                phone_number=request.session.get('user_id'),
-                status=AuthReqs.VERIFICATION_CODE
-            )
+            # handles bad requests
+            handle_bad_requests(request, AuthReqs.VERIFICATION_CODE)
+
             return Response({'error': 'code not accepted'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class GetUserInfoRegisterView(APIView):
     """
         gets other user info and registers new user
+        permissions: BlockedIPPermission
         allowed methods: POST
         request data:
             first_name: string
