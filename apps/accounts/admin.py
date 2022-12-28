@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import User
+from .models import User, VerificationCode, AuthReqs
 
 
 @admin.register(User)
@@ -11,4 +11,18 @@ class UserAdmin(admin.ModelAdmin):
         'is_staff',
         'is_superuser',
         'last_login'
+    ]
+
+
+@admin.register(VerificationCode)
+class VerificationCodeAdmin(admin.ModelAdmin):
+    list_display = [
+        'phone_number', 'code', 'created_on'
+    ]
+
+
+@admin.register(AuthReqs)
+class AuthReqsAdmin(admin.ModelAdmin):
+    list_display = [
+        'ip_addr', 'phone_number', 'status', 'created_on'
     ]

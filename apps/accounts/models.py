@@ -55,4 +55,3 @@ class AuthReqs(models.Model):
     status = models.CharField(max_length=50, choices=STATUS_CHOICES)
 
     created_on = models.DateTimeField(auto_now_add=True)
-    expired = models.BooleanField(default=False)
