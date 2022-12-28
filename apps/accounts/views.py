@@ -155,13 +155,15 @@ class GetUserInfoRegisterView(APIView):
     def post(request, *args, **kwargs):
         try:
             if request.data.get('password') == request.data.get('password2'):
-                User.objects.create(
+                user = User.objects.create(
                     phone_number=request.session.get('user_id'),
                     first_name=request.data.get('first_name'),
-                    last_name=request.data.get('last_name'),
-                    email=request.data.get('email'),
-                    password=request.data.get('password')
+                    last_name=request.data.get('last_name')
                 )
+                if request.data.get('email') is not None:
+                    user.email = request.data.get('email')
+                user.set_password(request.data.get('password'))
+                user.save()
 
                 return Response({'user created successfuly'}, status=status.HTTP_201_CREATED)
             return Response({'error': 'passwords didn\'t match'}, status=status.HTTP_400_BAD_REQUEST)
