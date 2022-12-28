@@ -11,6 +11,9 @@ from .models import User, AuthReqs, VerificationCode, \
 
 
 def get_client_ip(request):
+    """
+        returns client's IP
+    """
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
     if x_forwarded_for:
         ip = x_forwarded_for.split(',')[0]
@@ -20,6 +23,9 @@ def get_client_ip(request):
 
 
 def generate_code(phone_number: str):
+    """
+        generates a random verification code
+    """
     code = str(random.randint(10000, 99999))
     VerificationCode.objects.create(
         phone_number=phone_number, code=code
@@ -28,9 +34,16 @@ def generate_code(phone_number: str):
 
 
 class AuthPhoneNumberView(APIView):
+    """
+        checks if the requested phone number has already signed up or not
+        allowed methods: POST
+        request data:
+            phone_number: string - format: +98********** ('+98' followed by 10 digits)
+    """
 
     @staticmethod
     def post(request, *args, **kwargs):
+        # checks for active users
         response = {
             'active_user': True if User.objects.filter(
                 phone_number=request.data.get('phone_number')
@@ -38,6 +51,7 @@ class AuthPhoneNumberView(APIView):
         }
 
         if not response['active_user']:
+            # generate code if no active user found
             code = generate_code(request.data.get('phone_number'))
             # todo: call the function responsible for sending the code
             print(f'code: {code}')
@@ -48,6 +62,12 @@ class AuthPhoneNumberView(APIView):
 
 
 class LoginView(APIView):
+    """
+        logs in using given phone number and password
+        allowed methods: POST
+        request data:
+            password: string
+    """
 
     @staticmethod
     def post(request, *args, **kwargs):
@@ -56,7 +76,7 @@ class LoginView(APIView):
                 request, username=request.session.get('user_id'),
                 password=request.data.get('password')
             )
-            return Response(status=status.HTTP_200_OK)
+            return Response({'message': 'user logged in successfully'}, status=status.HTTP_200_OK)
         except:
             AuthReqs.objects.create(
                 ip_addr=get_client_ip(request),
@@ -67,6 +87,12 @@ class LoginView(APIView):
 
 
 class RegisterCodeView(APIView):
+    """
+        checks the verification code sent to the user
+        allowed methods: POST
+        request data:
+            code: string - format: ****** (6 digits)
+    """
 
     @staticmethod
     def post(request, *args, **kwargs):
@@ -75,6 +101,7 @@ class RegisterCodeView(APIView):
                     code=request.data.get('code'),
                     phone_number=request.session.get('user_id')
             ).exist:
+                # checks if code exists
                 AuthReqs.objects.create(
                     ip_addr=get_client_ip(request),
                     phone_number=request.session.get('user_id'),
@@ -86,11 +113,19 @@ class RegisterCodeView(APIView):
                     code=request.data.get('code'),
                     phone_number=request.session.get('user_id')
             ).created_on < datetime.now() - CODE_VERIFICATION_TIME_LIMIT:
+                # checks for code expiry
                 AuthReqs.objects.create(
                     ip_addr=get_client_ip(request),
                     phone_number=request.session.get('user_id'),
                     status=AuthReqs.VERIFICATION_CODE
                 )
+
+                # deletes the expired code
+                VerificationCode.objects.get(
+                    code=request.data.get('code'),
+                    phone_number=request.session.get('user_id')
+                ).delete()
+
                 return Response({'error': 'code expired'}, status=status.HTTP_400_BAD_REQUEST)
 
             return Response({'message': 'code accepted'}, status=status.HTTP_200_OK)
@@ -105,6 +140,16 @@ class RegisterCodeView(APIView):
 
 
 class GetUserInfoRegisterView(APIView):
+    """
+        gets other user info and registers new user
+        allowed methods: POST
+        request data:
+            first_name: string
+            last_name: string
+            email: string
+            password: string
+            password2: string
+    """
 
     @staticmethod
     def post(request, *args, **kwargs):
