@@ -31,9 +31,11 @@ class User(AbstractUser):
     objects = CustomUserManager()
 
 
-class UserVerificationCode(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='verification_code')
+class VerificationCode(models.Model):
+    phone_number = models.CharField(max_length=16)
     code = models.CharField(max_length=6)
+
+    created_on = models.DateTimeField(auto_now_add=True)
 
 
 class AuthReqs(models.Model):

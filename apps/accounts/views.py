@@ -1,9 +1,11 @@
+import random
+
 from django.contrib.auth import authenticate
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import User, AuthReqs
+from .models import User, AuthReqs, VerificationCode
 
 
 def get_client_ip(request):
@@ -13,6 +15,14 @@ def get_client_ip(request):
     else:
         ip = request.META.get('REMOTE_ADDR')
     return ip
+
+
+def generate_code(phone_number: str):
+    code = str(random.randint(10000, 99999))
+    VerificationCode.objects.create(
+        phone_number=phone_number, code=code
+    )
+    return code
 
 
 class AuthPhoneNumberView(APIView):
@@ -26,8 +36,9 @@ class AuthPhoneNumberView(APIView):
         }
 
         if not response['active_user']:
-            # todo: call the function responsible for code generation and
-            #       sending an sms
+            code = generate_code(request.data.get('phone_number'))
+            # todo: call the function responsible for sending the code
+            print(f'code: {code}')
             pass
 
         request.session['user_id'] = request.data.get('user_id')
