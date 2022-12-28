@@ -102,3 +102,24 @@ class RegisterCodeView(APIView):
                 status=AuthReqs.VERIFICATION_CODE
             )
             return Response({'error': 'code not accepted'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class GetUserInfoRegisterView(APIView):
+
+    @staticmethod
+    def post(request, *args, **kwargs):
+        try:
+            if request.data.get('password') == request.data.get('password2'):
+                User.objects.create(
+                    phone_number=request.session.get('user_id'),
+                    first_name=request.data.get('first_name'),
+                    last_name=request.data.get('last_name'),
+                    email=request.data.get('email'),
+                    password=request.data.get('password')
+                )
+
+                return Response({'user created successfuly'}, status=status.HTTP_201_CREATED)
+            return Response({'error': 'passwords didn\'t match'}, status=status.HTTP_400_BAD_REQUEST)
+
+        except:
+            return Response({'error': 'something went wrong'}, status=status.HTTP_400_BAD_REQUEST)
