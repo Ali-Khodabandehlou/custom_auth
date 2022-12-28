@@ -60,3 +60,9 @@ class AuthReqs(models.Model):
 class BlockedIP(models.Model):
     ip_addr = models.CharField(max_length=50)
     created_on = models.DateTimeField(auto_now_add=True)
+
+
+class AllowedSignUpIP(models.Model):
+    phone_number = models.CharField(max_length=16)
+    ip_addr = models.CharField(max_length=50)
+    created_on = models.DateTimeField(auto_now_add=True)
